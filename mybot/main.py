@@ -9,6 +9,8 @@ game: unswbc.Game
 def execute_turn() -> None:
     memory.update_memory()
     movement.move()
+    if ct.can_split(2):
+        ct.do_split(2)
 
 def main() -> None:
     global ct, game, memory, movement
