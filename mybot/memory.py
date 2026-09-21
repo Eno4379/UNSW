@@ -1,6 +1,5 @@
-import unswbc
 import helper as unswbc
-from helper import Direction, Tile
+from helper import Direction, Tile, Position
 from typing import List
 
 class Memory:
@@ -25,6 +24,15 @@ class Memory:
         for tile in visible_tiles:
             x, y = tile.position.x , tile.position.y
             self.board[x][y] = tile
+
+    def pearl_within_vision(self) -> Position | bool:
+        for tile in self.ct.get_tiles():
+            if tile.has_pearl():
+                return tile.position
+
+        return False
+
+
 
             
 

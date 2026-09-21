@@ -8,7 +8,7 @@ game: unswbc.Game
 
 def execute_turn() -> None:
     memory.update_memory()
-    movement.move()
+    movement.execute()
     if ct.can_split(2):
         ct.do_split(2)
 
