@@ -25,14 +25,17 @@ class Movement:
         self.ct.output_log(f"I chose {self.rand_dir}")
 
     def move(self):
-        directions = Direction.get_direction_list()
-        random.shuffle(directions)
-        for direction in directions:
-            if self.pathfinding.is_safe(direction):
-                self.ct.make_move(direction)
-                return
+        if self.pathfinding.is_safe(self.rand_dir):
+            self.ct.make_move(self.rand_dir)
+        else:
+            directions = Direction.get_direction_list()
+            random.shuffle(directions)
+            for direction in directions:
+                if self.pathfinding.is_safe(direction):
+                    self.ct.make_move(direction)
+                    return
 
-        self.ct.make_move(self.ct.get_dir())
+            self.ct.make_move(self.ct.get_dir())
 
                 
 
