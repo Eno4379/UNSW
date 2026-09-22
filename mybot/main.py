@@ -6,13 +6,18 @@ from constants import *
 
 ct: unswbc.Controller
 game: unswbc.Game
+unit_count_at_200: int | None = None
 
 def execute_turn() -> None: 
+    global unit_count_at_200
     memory.update_memory()
     if DEBUG:
         memory.display_memory()
 
-    if game.get_round_num() < 200:
+    if game.get_round_num() == 200:
+        unit_count_at_200 = ct.get_unit_count()
+
+    if game.get_round_num() <= 200:
         if ct.can_split(2):
             if DEBUG:
                 ct.output_log("decision: split (early growth)")
@@ -20,7 +25,7 @@ def execute_turn() -> None:
         else:
             movement.execute()
     elif game.get_round_num() < 450:
-        if ct.get_unit_count() < 15 and ct.can_split(2):
+        if ct.get_unit_count() < unit_count_at_200 and ct.can_split(2):
             if DEBUG:
                 ct.output_log("decision: split (unit count below 15)")
             ct.do_split(2)
