@@ -8,9 +8,23 @@ game: unswbc.Game
 
 def execute_turn() -> None:
     memory.update_memory()
-    movement.execute()
-    if ct.can_split(2) and game.get_round_num() <= 200:
-        ct.do_split(2)
+    memory.display_memory()
+
+    if game.get_round_num() < 200:
+        if ct.can_split(2):
+            ct.do_split(2)
+        else:
+            movement.execute()
+    elif game.get_round_num() < 400:
+        if ct.get_unit_count() < 15 and ct.can_split(2):
+            ct.do_split(2)
+        else:
+            movement.execute()
+
+    movement.draw_cached_path()
+
+
+
 
 def main() -> None:
     global ct, game, memory, movement
