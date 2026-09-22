@@ -1,47 +1,56 @@
 import helper as unswbc
-from helper import Direction
+from helper import DEBUG
 from memory import Memory
 from movement import Movement
-from constants import *
+from constants import DEBUG_ACTIVE
 
 ct: unswbc.Controller
 game: unswbc.Game
 unit_count_at_200: int | None = None
 
+
+def try_split(reason: str) -> bool:
+    if not ct.can_split(2):
+        return False
+
+    DEBUG(f"decision: split ({reason})")
+    ct.do_split(2)
+    return True
+
+
 def execute_turn() -> None: 
     global unit_count_at_200
+    # Update memory every round
     memory.update_memory()
-    if DEBUG:
+
+    if DEBUG_ACTIVE:
         memory.display_memory()
 
     if game.get_round_num() == 200:
         unit_count_at_200 = ct.get_unit_count()
 
-    if game.get_round_num() <= 200:
-        if ct.can_split(2):
-            if DEBUG:
-                ct.output_log("decision: split (early growth)")
-            ct.do_split(2)
-        else:
-            movement.execute()
-    elif game.get_round_num() < 450:
-        if ct.get_unit_count() < unit_count_at_200 and ct.can_split(2):
-            if DEBUG:
-                ct.output_log("decision: split (unit count below 15)")
-            ct.do_split(2)
-        else:
-            movement.execute()
+    round_number = game.get_round_num()
+
+    # Boolean flags
+    should_grow_early = round_number <= 200
+
+    if unit_count_at_200 is None:
+        below_round_200_baseline = ct.get_unit_count() < 50
+    else:
+        below_round_200_baseline = ct.get_unit_count() < unit_count_at_200
+
+
+    # -- main decision tree --
+    if should_grow_early and try_split("early growth"):
+        pass
+    elif below_round_200_baseline and round_number < 450 and try_split("recovering unit count"): 
+        pass
     else:
         movement.execute()
 
-    if DEBUG:
+    if DEBUG_ACTIVE:
+        # needs to be called after movement.execute()
         movement.draw_cached_path()
-
-        # for x in game.width:
-        #     for y in game.
-
-
-
 
 
 def main() -> None:

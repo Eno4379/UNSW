@@ -1,11 +1,11 @@
 import helper as unswbc
-from helper import Direction, Position
+from helper import DEBUG, Direction, Position
 from pathfinding import Pathfinding
 from combat import Combat
 from searching import Searching
 import random
 from memory import Memory
-from constants import *
+from constants import SAFETY_BUFFER
 
 
 class Movement:
@@ -51,12 +51,10 @@ class Movement:
             for dir in directions_to_move_in:
                 if self.pathfinding.move_is_safe(dir, required_space):
                     self.ct.make_move(dir)
-                    if DEBUG:
-                        self.ct.output_log(f"move: {dir.value} (greedy toward pearl)")
+                    DEBUG(f"move: {dir.value} (greedy toward pearl)")
                     return
 
-        if DEBUG:
-            self.ct.output_log("move: no safe route toward pearl; trying random move")
+        DEBUG("move: no safe route toward pearl; trying random move")
         self.move_randomly()
         return
 
@@ -65,20 +63,17 @@ class Movement:
         direction = self.pathfinding.get_next_step(here, pos)
 
         if direction is None:
-            if DEBUG:
-                self.ct.output_log("target: unreachable; abandoning pearl")
+            DEBUG("target: unreachable; abandoning pearl")
             return False
 
         required_space = self.ct.get_length() + SAFETY_BUFFER
         if self.pathfinding.move_is_safe(direction, required_space):
             self.ct.make_move(direction)
             self.pathfinding.has_moved_along_path()
-            if DEBUG:
-                self.ct.output_log(f"move: {direction.value} (path toward pearl)")
+            DEBUG(f"move: {direction.value} (path toward pearl)")
             return True
 
-        if DEBUG:
-            self.ct.output_log(f"move: planned {direction.value} unsafe; using greedy fallback")
+        DEBUG(f"move: planned {direction.value} unsafe; using greedy fallback")
         self.move_towards_greedy(pos)
         return True
 
@@ -87,11 +82,9 @@ class Movement:
 
         if best_direction is not None:
             self.ct.make_move(best_direction)
-            if DEBUG:
-                self.ct.output_log(f"move: {best_direction.value} (search)")
+            DEBUG(f"move: {best_direction.value} (search)")
         else:
-            if DEBUG:
-                self.ct.output_log("move: no safe scored direction; trying random move")
+            DEBUG("move: no safe scored direction; trying random move")
             self.move_randomly()
 
     def move_randomly(self) -> None:
@@ -100,16 +93,14 @@ class Movement:
         for direction in directions:
             if self.pathfinding.can_move(direction):
                 self.ct.make_move(direction)
-                if DEBUG:
-                    self.ct.output_log(f"move: {direction.value} (random fallback)")
+                DEBUG(f"move: {direction.value} (random fallback)")
                 return
 
         self.force_move_forwards()
 
     def force_move_forwards(self) -> None:
         self.ct.make_move(self.ct.get_dir())
-        if DEBUG:
-            self.ct.output_log("move: forced forward (no safe direction found)")
+        DEBUG("move: forced forward (no safe direction found)")
 
     def execute(self):
         pearl_location = self.memory.get_target_pearl()
@@ -117,20 +108,17 @@ class Movement:
             return
 
         if pearl_location is not None:
-            if DEBUG:
-                self.ct.output_log(f"decision: pearl target {pearl_location}")
+            DEBUG(f"decision: pearl target {pearl_location}")
             if self.move_towards(pearl_location):
                 return
 
             self.memory.give_up_on_target_pearl()
             self.searching_behaviour()
-            if DEBUG:
-                    self.ct.output_log(f"decision: searching for unexplored space")
+            DEBUG("decision: searching for unexplored space")
             
 
         else:
-            if DEBUG:
-                self.ct.output_log("decision: searching for unexplored space")
+            DEBUG("decision: searching for unexplored space")
             self.searching_behaviour()
 
     def draw_cached_path(self):

@@ -1,7 +1,7 @@
 import random
 
 import helper as unswbc
-from helper import Direction
+from helper import Direction, DEBUG
 from memory import Memory
 from pathfinding import Pathfinding
 from constants import *
@@ -28,8 +28,7 @@ class Searching:
 
         for direction in directions:
             if not self.pathfinding.move_is_safe(direction, required_space):
-                if DEBUG:
-                    self.ct.output_log(f"search: {direction.value} unsafe")
+                DEBUG(f"search: {direction.value} unsafe")
                 continue
 
             exploration_score = self.memory.count_unexplored_ahead(
@@ -40,13 +39,12 @@ class Searching:
             crowd_weighted = CROWD_AVOIDANCE_WEIGHT * crowd_score
             score = exploration_weighted + crowd_weighted
 
-            if DEBUG:
-                self.ct.output_log(
-                    f"search: {direction.value} score={score:.1f} "
-                    f"(explore={exploration_score:.1f}*{EXPLORATION_WEIGHT:.1f}="
-                    f"{exploration_weighted:.1f}, crowd={crowd_score:.1f}*"
-                    f"{CROWD_AVOIDANCE_WEIGHT:.1f}={crowd_weighted:.1f})"
-                )
+            DEBUG(
+                f"search: {direction.value} score={score:.1f} "
+                f"(explore={exploration_score:.1f}*{EXPLORATION_WEIGHT:.1f}="
+                f"{exploration_weighted:.1f}, crowd={crowd_score:.1f}*"
+                f"{CROWD_AVOIDANCE_WEIGHT:.1f}={crowd_weighted:.1f})"
+            )
 
             if score > best_score:
                 best_score = score

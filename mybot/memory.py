@@ -14,12 +14,28 @@ class Memory:
         # the pearl we're currently committed to hunting, if any
         self.target_pearl: Position | None = None
 
+        # portals
+        # {id: [pos, pos]}
+        self.known_portals: dict[int, set[Position]] = {}
+
     def update_memory(self):
         visible_tiles: List[Tile] = self.ct.get_tiles()
 
         for tile in visible_tiles:
             x, y = tile.position.x, tile.position.y
             self.board[x][y] = tile
+
+            for direction in unswbc._DIRECTIONS:
+                edge = tile.get_edge(direction)
+
+                if edge.is_portal():
+                    portal_id = edge.get_portal_id()
+                    
+                    if portal_id not in self.known_portals:
+                        self.known_portals[portal_id] = set()
+                    
+                    # Store the coordinate where this portal entry exists
+                    self.known_portals[portal_id].add(Position(x, y))
 
         self._update_target_pearl(visible_tiles)
 
@@ -78,3 +94,11 @@ class Memory:
 
         if self.target_pearl:
             self.ct.draw_indicator_dot(self.target_pearl, 0, 0, 0)
+
+    # ------------- portal functions ------------------
+    def is_portal_complete(self, portal_id: int) -> bool:
+        """Returns True if both entry and exit ends of a portal pair are in memory."""
+        return portal_id in self.known_portals and len(self.known_portals[portal_id]) >= 2
+
+    
+    # ------------- portal functions ------------------

@@ -210,3 +210,13 @@ class Pathfinding:
 
         if self._cached_goal is not None:
             self.ct.draw_indicator_dot(self._cached_goal, 255, 255, 0)
+
+    def get_portal_cost_penalty(self) -> float:
+        """
+        Calculates a dynamic, positive risk penalty for entering unknown portals.
+        Decreases risk-taking as rounds progress and the dragon grows longer.
+        """
+        current_round = self.game.get_round_num()
+        dragon_length = self.ct.get_length()
+
+        return portal_traverse_base_penalty + (current_round * portal_traverse_round_weight) + (dragon_length * portal_traverse_dragon_length_weight)

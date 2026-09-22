@@ -1,7 +1,6 @@
 import helper as unswbc
 from helper import Direction
 from pathfinding import Pathfinding
-from constants import DEBUG
 
 
 class Combat:
@@ -38,8 +37,7 @@ class Combat:
 
             enemy = tile.dragon_part
             if enemy.is_dragon_head and enemy.get_team() != own_team:
-                if DEBUG:
-                    self.ct.output_log(f"combat: attack {direction.value} (enemy head adjacent)")
+                unswbc.DEBUG(f"combat: attack {direction.value} (enemy head adjacent)")
                 return direction
 
         return None

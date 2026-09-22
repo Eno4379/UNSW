@@ -1,5 +1,6 @@
 import sys
 from enum import Enum
+from constants import *
 
 INT_SIZE = 32
 game: "Game" = None
@@ -511,3 +512,7 @@ def update(controller: Controller, game_state: Game) -> bool:
 def end_turn():
     """Ends the turn and flushes everything you printed."""
     print("ENDTURN", flush=True)
+
+def DEBUG(msg: str):
+    if DEBUG_ACTIVE:
+        ct.output_log(msg)
