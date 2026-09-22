@@ -9,7 +9,7 @@ game: unswbc.Game
 def execute_turn() -> None:
     memory.update_memory()
     movement.execute()
-    if ct.can_split(2):
+    if ct.can_split(2) and game.get_round_num() <= 200:
         ct.do_split(2)
 
 def main() -> None:

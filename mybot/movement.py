@@ -24,7 +24,9 @@ class Movement:
         self.rand_dir: Direction = random.choice(Direction.get_direction_list())
         self.ct.output_log(f"I chose {self.rand_dir}")
 
-    def move_towards(self, pos: Position):
+
+    # dumb algorithm to move towards the position
+    def move_towards_greedy(self, pos: Position):
         here = self.ct.get_position()
         x_delta = pos.x - here.x
         y_delta = pos.y - here.y
@@ -56,6 +58,22 @@ class Movement:
         self.move_randomly()
         return
 
+    def move_towards(self, pos: Position):
+        here = self.ct.get_position()
+        # danger = self.pathfinding._danger_tiles()
+
+        direction = self.pathfinding.get_next_step(here, pos)
+
+        if direction is not None:
+            required_space = self.ct.get_length() + SAFETY_BUFFER
+            if self.pathfinding.move_is_safe(direction, required_space):
+                self.ct.make_move(direction)
+                self.pathfinding.has_moved_along_path()
+                return
+
+        # A* found nothing usable, or the step looked unsafe — fall back to
+        # the old greedy approach so we still make *some* progress
+        self.move_towards_greedy(pos)
 
     def searching_behaviour(self):
         if self.pathfinding.can_move(self.rand_dir):
