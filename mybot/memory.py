@@ -68,13 +68,13 @@ class Memory:
         return positions
 
     def display_memory(self):
-        for x in range(self.width):
-            for y in range(self.height):
-                tile = self.board[x][y]
-                if tile == None:
-                    continue
-                if tile.dragon_part:
-                    self.ct.draw_indicator_dot(Position(x, y), 255, 0, 0)
+        # for x in range(self.width):
+        #     for y in range(self.height):
+        #         tile = self.board[x][y]
+        #         if tile == None:
+        #             continue
+        #         if tile.dragon_part:
+        #             self.ct.draw_indicator_dot(Position(x, y), 255, 0, 0)
 
         if self.target_pearl:
             self.ct.draw_indicator_dot(self.target_pearl, 0, 0, 0)
