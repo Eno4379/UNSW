@@ -7,11 +7,14 @@ MAX_A_STAR_NODES = 25
 MAX_REACHABILITY_NODES = 80
 # having max reachability at 200 seems like the highest limit
 # tune verus map size?
+PATHFINDING_CACHE_ENABLED = False
 
+# ----------------------- Exploration (in searching behaviour) ----------------------------
 EXPLORATION_LOOKAHEAD = 5     # how far to peek for unexplored tiles per direction
 EXPLORATION_WEIGHT = 1.0
 CROWD_AVOIDANCE_WEIGHT = 2  # tune higher to prioritize spreading out over exploring
-
+PORTAL_EXPLORATION_SCORE = 2 # a tile is worth 1
+# ----------------------- Exploration (in searching behaviour) ----------------------------
 
 # ------------------------- Pathfinding penalities ------------------------------
 # PORTALS: 

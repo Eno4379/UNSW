@@ -1,14 +1,17 @@
 import helper as unswbc
 from helper import Direction, DEBUG
 from pathfinding import Pathfinding
+from memory import Memory
 
 
 class Combat:
     """Chooses whether this dragon should attack an adjacent enemy head."""
 
-    def __init__(self, ct: unswbc.Controller, pathfinding: Pathfinding):
+    def __init__(self, ct: unswbc.Controller, game: unswbc.Game, memory: Memory, pathfinding: Pathfinding):
         self.ct = ct
         self.pathfinding = pathfinding
+        self.memory = memory
+        self.game = game
 
     def choose_attack_direction(self) -> Direction | None:
         """Return an attack direction when combat is preferable to movement."""
@@ -18,7 +21,7 @@ class Combat:
         # only kill when there are more allies near you than enemies 
         # pushes the battle front, taking more map control or else you'd lo
         # se map control
-        self_count, enemy_count = self.dragon_part_distribution_in_vision()
+        self_count, enemy_count = self.memory.dragon_part_distribution_in_vision()
         if not self_count >= enemy_count:
             return None
 
@@ -41,18 +44,6 @@ class Combat:
                 return direction
 
         return None
-
-    def dragon_part_distribution_in_vision(self) -> list[int, int]:
-        # might be more efficient to pull from memory
-        team_dragon_parts, enemy_dragon_parts = 0, 0
-        for tile in self.ct.get_tiles():
-            if tile.dragon_part == None:
-                continue
-            if tile.dragon_part.team == self.ct.get_team():
-                team_dragon_parts += 1
-            else:
-                enemy_dragon_parts += 1
-        return team_dragon_parts, enemy_dragon_parts
 
 
     def execute(self) -> bool:

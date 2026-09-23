@@ -38,6 +38,14 @@ class Pathfinding:
         if ahead_live is not None and ahead_live.get_dragon() is not None:
             return False
 
+        # makes sure it doesn't reverse after going through a portal
+        if pos == self.ct.get_position():
+            behind_direction = Direction.get_opposite(self.ct.get_dir())
+            edge_behind_dragon_head = tile.get_edge(behind_direction)
+            if edge_behind_dragon_head.get_edge_type() == unswbc.EdgeType.PORTAL:
+                if direction == behind_direction:
+                    return False 
+
         return True  # either clear, or outside vision — optimistic on occupancy
 
     def has_no_edge(self, pos: Position, direction: Direction) -> bool:
@@ -136,7 +144,7 @@ class Pathfinding:
     def get_next_step(self, start_pos: Position, goal_pos: Position,
                       max_a_star_nodes: int = MAX_A_STAR_NODES,
                       max_reachability_nodes: int = MAX_REACHABILITY_NODES) -> Direction | None:
-        if self._path_still_valid(start_pos, goal_pos):
+        if PATHFINDING_CACHE_ENABLED and self._path_still_valid(start_pos, goal_pos):
             return self._cached_path[0]
 
         if not self._reachable(start_pos, goal_pos, max_reachability_nodes):
@@ -145,9 +153,14 @@ class Pathfinding:
             return None
 
         path = self._find_path_to(start_pos, goal_pos, max_a_star_nodes)
-        self._cached_path = path or []
-        self._cached_goal = goal_pos
-        return self._cached_path[0] if self._cached_path else None
+        if PATHFINDING_CACHE_ENABLED:
+            self._cached_path = path or []
+            self._cached_goal = goal_pos
+            return self._cached_path[0] if self._cached_path else None
+        else:
+            self._cached_path = []
+            self._cached_goal = None
+            return path[0] if path else None
 
     def has_moved_along_path(self):
         if self._cached_path:

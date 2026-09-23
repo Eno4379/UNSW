@@ -1,6 +1,7 @@
 import helper as unswbc
-from helper import Direction, Tile, Position
+from helper import Direction, Tile, Position, EdgeType
 from typing import List
+from constants import *
 
 class Memory:
     def __init__(self, ct: unswbc.Controller, game: unswbc.Game):
@@ -39,6 +40,12 @@ class Memory:
 
         self._update_target_pearl(visible_tiles)
 
+    def get_pearl_within_vision_count(self):
+        pearl_count = 0
+        for tile in self.ct.get_tiles():
+            if tile.has_pearl: pearl_count += 1
+        return pearl_count
+
     def _update_target_pearl(self, visible_tiles: List[Tile]):
         # if we can currently see our target's tile, confirm it's still there —
         # otherwise someone else got it
@@ -67,8 +74,14 @@ class Memory:
         current = pos
         for _ in range(depth):
             current = current.add_dir(direction)
-            if self.board[current.x][current.y] is None:
+            current_tile = self.board[current.x][current.y]
+            if current_tile is None:
                 count += 1
+            if current_tile is not None:
+                edge_list = current_tile.edges.values()
+                for edge in edge_list:
+                    if edge.edge_type == EdgeType.PORTAL:
+                        count += PORTAL_EXPLORATION_SCORE
         return count
 
     
@@ -102,3 +115,31 @@ class Memory:
 
     
     # ------------- portal functions ------------------
+
+    def dragon_part_distribution_in_vision(
+        self, include_detail: bool = False,
+        exclude_self: bool = False
+    ) -> tuple[dict[int, int], dict[int, int]] | tuple[int, int]:
+        """Return visible dragon part counts, optionally grouped by dragon ID."""
+        team_dragon_lengths: dict[int, int] = {}
+        enemy_dragon_lengths: dict[int, int] = {}
+
+        for tile in self.ct.get_tiles():
+            if tile.dragon_part == None:
+                continue
+
+            dragon_id = tile.dragon_part.get_id()
+            dragon_is_friendly: bool = tile.dragon_part.get_team() == self.ct.get_team()
+
+            lengths = team_dragon_lengths if dragon_is_friendly else enemy_dragon_lengths
+            if exclude_self and dragon_id == self.ct.get_id():
+                continue
+            if dragon_id in lengths:
+                lengths[dragon_id] += 1
+            else:
+                lengths[dragon_id] = 1
+
+        if include_detail:
+            return team_dragon_lengths, enemy_dragon_lengths
+
+        return sum(team_dragon_lengths.values()), sum(enemy_dragon_lengths.values())

@@ -3,3 +3,5 @@ main
 movement
 ^
 pathfinding, combat, searching
+
+memory, ct, and game are all passed to each .py file

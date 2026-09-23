@@ -305,6 +305,8 @@ class EdgeType(Enum):
     KELP = 1
     PORTAL = 2
 
+
+
 class Edge:
     """The boundary between two tiles."""
     __slots__ = ("is_horizontal", "edge_type", "portal_id")

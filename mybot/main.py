@@ -31,22 +31,25 @@ def execute_turn() -> None:
 
     round_number = game.get_round_num()
 
-    # Boolean flags
+    # --------- Boolean flags ---------------
     should_grow_early = round_number <= 200
 
     if unit_count_at_200 is None:
         below_round_200_baseline = ct.get_unit_count() < 50
     else:
         below_round_200_baseline = ct.get_unit_count() < unit_count_at_200
+    # --------- Boolean flags ---------------
 
 
-    # -- main decision tree --
+    # ---------------- main decision tree --------------------------------
     if should_grow_early and try_split("early growth"):
         pass
-    elif below_round_200_baseline and round_number < 450 and try_split("recovering unit count"): 
+    elif round_number < 450 and below_round_200_baseline and try_split("recovering unit count"): 
+        pass
+    elif (movement.execute_early_game_plan() if round_number < 450 else movement.execute_late_game_plan()):
         pass
     else:
-        movement.execute()
+        movement.move_randomly()
 
     if DEBUG_ACTIVE:
         # needs to be called after movement.execute()

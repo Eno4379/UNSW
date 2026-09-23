@@ -10,7 +10,7 @@ __pycache__/
 venv/
 env/
 
-# UNSW Battle Cats generated files
+# UNSW Battle Code generated files
 mybot/.unswbc-build/
 *.replay
 

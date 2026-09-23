@@ -14,8 +14,8 @@ class Movement:
         self.ct = ct
         self.game = game
         self.pathfinding = Pathfinding(ct, game, memory)
-        self.combat = Combat(ct, self.pathfinding)
-        self.searching = Searching(ct, memory, self.pathfinding)
+        self.combat = Combat(ct, game, memory, self.pathfinding)
+        self.searching = Searching(ct, game, memory, self.pathfinding)
         self.width = game.width
         self.height = game.height
 
@@ -77,15 +77,16 @@ class Movement:
         self.move_towards_greedy(pos)
         return True
 
-    def searching_behaviour(self):
+    def searching_behaviour(self) -> bool:
         best_direction = self.searching.choose_direction()
 
         if best_direction is not None:
             self.ct.make_move(best_direction)
             DEBUG(f"move: {best_direction.value} (search)")
+            return True
         else:
-            DEBUG("move: no safe scored direction; trying random move")
-            self.move_randomly()
+            DEBUG("move: no safe scored direction")
+            return False
 
     def move_randomly(self) -> None:
         directions = unswbc._DIRECTIONS[::]
@@ -95,31 +96,98 @@ class Movement:
                 self.ct.make_move(direction)
                 DEBUG(f"move: {direction.value} (random fallback)")
                 return
-
-        self.force_move_forwards()
+        DEBUG(f"thought: completely stuck - gonna killmyself")
+        self.sucide()
 
     def force_move_forwards(self) -> None:
         self.ct.make_move(self.ct.get_dir())
         DEBUG("move: forced forward (no safe direction found)")
 
-    def execute(self):
-        pearl_location = self.memory.get_target_pearl()
-        if self.combat.execute():
-            return
+    def try_reverse_direction_split(self) -> bool:
+        """Splits (2) but on the tail end, so it 'reverses' itself"""
+        if self.ct.can_split(self.ct.get_length() - 2):
+            DEBUG("decision: Reverse direction split")
+            self.ct.do_split(self.ct.get_length() - 2)
+            return True
+        DEBUG("decision: Want to split due to no safe spaces")
+        DEBUG("but cannot")
+        return False
 
+    def sucide(self) -> bool:
+        """Kills itself by moving backwards, always return true"""
+        DEBUG("Killing myself")
+        current_dir = self.ct.get_dir()
+        self.ct.make_move(Direction.get_opposite(current_dir))
+
+    def should_sacrifice(self) -> bool:
+        team_dragons_dict_exclude_self, enemy_dragons_dict = self.memory.dragon_part_distribution_in_vision(include_detail=True, 
+                                                                                                       exclude_self=True)
+        enemy_dragons_count = sum(enemy_dragons_dict.values())
+        team_dragons_count_exclude_self = sum(team_dragons_dict_exclude_self.values())
+        self_length = self.ct.get_length()
+
+        highest_friendly_length = max(team_dragons_dict_exclude_self.values(), default=0)
+
+        if enemy_dragons_count == 0 and team_dragons_count_exclude_self > 0:
+            if highest_friendly_length > self_length:
+                DEBUG(f"decision: I found a dragon near me with length {highest_friendly_length}")
+                DEBUG(f"I should commit sucide")
+                return True
+        DEBUG(f"decision: I am the longest dragon near me, will not commit sucide")    
+        return False
+
+    def pearl_behaviour(self):
+        pearl_location = self.memory.get_target_pearl()
         if pearl_location is not None:
             DEBUG(f"decision: pearl target {pearl_location}")
             if self.move_towards(pearl_location):
-                return
-
+                # move_towards returns false when can't find a path
+                DEBUG(f"decision: moving towards {pearl_location}") 
+                return True
             self.memory.give_up_on_target_pearl()
-            self.searching_behaviour()
-            DEBUG("decision: searching for unexplored space")
-            
 
-        else:
-            DEBUG("decision: searching for unexplored space")
-            self.searching_behaviour()
+        return False
 
+
+    # ------------------ main execution loops -------------------------
+    # returns True when an action is chosen
+    def execute_early_game_plan(self) -> bool:
+        if self.combat.execute():
+            return True
+
+        if self.pearl_behaviour():
+            return True
+
+        if self.searching_behaviour():
+            DEBUG("decision: searching for unexplored space")
+            return True            
+
+        if self.try_reverse_direction_split():
+            DEBUG("split: forced to split due to no safe spaces")
+            return True
+
+        return False
+
+    def execute_late_game_plan(self):
+        if self.combat.execute():
+            return True
+
+        if self.should_sacrifice():
+            self.sucide()
+            return True
+
+        if self.pearl_behaviour():
+            return True
+
+        if self.searching_behaviour():
+            DEBUG("decision: searching for unexplored space")
+            return True
+
+        if self.try_reverse_direction_split():
+            DEBUG("split: forced to split due to no safe spaces")
+            return True
+
+    # ------------------ main execution loops -------------------------
+    
     def draw_cached_path(self):
         self.pathfinding.draw_cached_path()

@@ -10,9 +10,10 @@ from constants import *
 class Searching:
     """Chooses the safest, most useful direction when no higher-priority target exists."""
 
-    def __init__(self, ct: unswbc.Controller, memory: Memory, pathfinding: Pathfinding):
+    def __init__(self, ct: unswbc.Controller, game: unswbc.Game, memory: Memory, pathfinding: Pathfinding):
         self.ct = ct
         self.memory = memory
+        self.game = game
         self.pathfinding = pathfinding
 
     def choose_direction(self) -> Direction | None:
