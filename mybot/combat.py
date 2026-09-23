@@ -1,5 +1,5 @@
 import helper as unswbc
-from helper import Direction
+from helper import Direction, DEBUG
 from pathfinding import Pathfinding
 
 
@@ -48,7 +48,7 @@ class Combat:
         for tile in self.ct.get_tiles():
             if tile.dragon_part == None:
                 continue
-            if tile.dragon_part == self.ct.get_team():
+            if tile.dragon_part.team == self.ct.get_team():
                 team_dragon_parts += 1
             else:
                 enemy_dragon_parts += 1
@@ -60,6 +60,7 @@ class Combat:
         direction = self.choose_attack_direction()
         if direction is None:
             return False
-
+        
+        DEBUG("Kill Behaviour")
         self.ct.make_move(direction)
         return True
