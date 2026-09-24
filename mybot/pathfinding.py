@@ -1,10 +1,11 @@
 import helper as unswbc
-from helper import Direction, Tile, Position
-from memory import Memory
-from constants import *
+from collections import deque
 from heapq import heappop, heappush
 from itertools import count
-from collections import deque
+
+from constants import *
+from helper import Direction, Position, Tile
+from memory import Memory
 
 class Pathfinding:
     def __init__(self, ct: unswbc.Controller, game: unswbc.Game, memory: "Memory"):
@@ -40,23 +41,13 @@ class Pathfinding:
 
         # makes sure it doesn't reverse after going through a portal
         if pos == self.ct.get_position():
-            behind_direction = Direction.get_opposite(self.ct.get_dir())
+            behind_direction = self.ct.get_dir().get_opposite()
             edge_behind_dragon_head = tile.get_edge(behind_direction)
             if edge_behind_dragon_head.get_edge_type() == unswbc.EdgeType.PORTAL:
                 if direction == behind_direction:
                     return False 
 
         return True  # either clear, or outside vision — optimistic on occupancy
-
-    def has_no_edge(self, pos: Position, direction: Direction) -> bool:
-        tile = self.memory.board[pos.x][pos.y]
-        if tile is None:
-            return True  # unexplored — optimistic
-
-        edge = tile.get_edge(direction)
-        if edge.get_edge_type() == unswbc.EdgeType.KELP:
-            return False
-        return
 
     # ---------------- Flood fill check start ---------------------
     def flood_fill_area(self, start_pos: Position, max_nodes: int) -> int:
@@ -198,8 +189,8 @@ class Pathfinding:
         #     self.ct.output_log(f"_reachable: goal not found, visited={visited_node_count}, seen={len(seen)}")
 
         return False
-
     # -------------------- A* algo -------------------------------
+
 
     def wrapped_delta(self, from_pos: Position, to_pos: Position) -> tuple[float, float]:
         dx = to_pos.x - from_pos.x
@@ -224,12 +215,5 @@ class Pathfinding:
         if self._cached_goal is not None:
             self.ct.draw_indicator_dot(self._cached_goal, 255, 255, 0)
 
-    def get_portal_cost_penalty(self) -> float:
-        """
-        Calculates a dynamic, positive risk penalty for entering unknown portals.
-        Decreases risk-taking as rounds progress and the dragon grows longer.
-        """
-        current_round = self.game.get_round_num()
-        dragon_length = self.ct.get_length()
 
-        return portal_traverse_base_penalty + (current_round * portal_traverse_round_weight) + (dragon_length * portal_traverse_dragon_length_weight)
+    

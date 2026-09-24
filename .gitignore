@@ -13,6 +13,8 @@ env/
 # UNSW Battle Code generated files
 mybot/.unswbc-build/
 *.replay
+*.csv
+*.json
 
 # Test and tool caches
 .pytest_cache/

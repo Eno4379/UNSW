@@ -1,0 +1,28 @@
+Map	                mybotwins	altbot wins	mybot winrate	altbot winrate
+arena.map	        6	        14	        30.0%	        70.0%
+big_empty.map	    11	        9	        55.0%	        45.0%
+Colosseum.map	    12	        8	        60.0%	        40.0%
+default.map	        14	        6	        70.0%	        30.0%
+default_small.map	9	        11	        45.0%	        55.0%
+devil.map	        12	        8	        60.0%	        40.0%
+queen_of_spades.map	12	        8	        60.0%	        40.0%
+schooltime.map	    12	        8	        60.0%	        40.0%
+stronghold.map	    10	        9	        50.0%	        45.0%
+trauma.map	        8	        12	        40.0%	        60.0%
+trophy.map	        10	        10	        50.0%	        50.0%
+
+
+Bot	    Wins	Total	Winrate
+mybot	116	    220	    52.7%
+altbot	101	    220	    45.9%
+
+modified winrate
+mybot 116/217
+altbot 101/217
+
+mybot is better than altbot at a 
+statisitical significance of 17%
+
+arena is objectively worse
+
+

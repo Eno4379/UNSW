@@ -1,0 +1,145 @@
+import helper as unswbc
+from helper import Direction, Tile, Position, EdgeType
+from typing import List
+from constants import *
+
+class Memory:
+    def __init__(self, ct: unswbc.Controller, game: unswbc.Game):
+        self.ct = ct
+        self.game = game
+        self.width, self.height = game.get_map_size()
+
+        self.board: List[List[Tile | None]]
+        self.board = [[None] * self.height for _ in range(self.width)]
+
+        # the pearl we're currently committed to hunting, if any
+        self.target_pearl: Position | None = None
+
+        # portals
+        # {id: [pos, pos]}
+        self.known_portals: dict[int, set[Position]] = {}
+
+    def update_memory(self):
+        visible_tiles: List[Tile] = self.ct.get_tiles()
+
+        for tile in visible_tiles:
+            x, y = tile.position.x, tile.position.y
+            self.board[x][y] = tile
+
+            for direction in unswbc._DIRECTIONS:
+                edge = tile.get_edge(direction)
+
+                if edge.is_portal():
+                    portal_id = edge.get_portal_id()
+                    
+                    if portal_id not in self.known_portals:
+                        self.known_portals[portal_id] = set()
+                    
+                    # Store the coordinate where this portal entry exists
+                    self.known_portals[portal_id].add(Position(x, y))
+
+        self._update_target_pearl(visible_tiles)
+
+    def get_pearl_within_vision_count(self):
+        pearl_count = 0
+        for tile in self.ct.get_tiles():
+            if tile.has_pearl: pearl_count += 1
+        return pearl_count
+
+    def _update_target_pearl(self, visible_tiles: List[Tile]):
+        # if we can currently see our target's tile, confirm it's still there —
+        # otherwise someone else got it
+        if self.target_pearl is not None:
+            known_tile = self.board[self.target_pearl.x][self.target_pearl.y]
+            if known_tile is not None and not known_tile.has_pearl():
+                self.target_pearl = None
+
+        # if we have no target, lock onto the first pearl currently visible
+        if self.target_pearl is None:
+            for tile in visible_tiles:
+                if tile.has_pearl():
+                    self.target_pearl = tile.position
+                    break
+
+    def get_target_pearl(self) -> Position | None:
+        return self.target_pearl
+
+    def give_up_on_target_pearl(self):
+        """Call when pathfinding decides the current target can't be reached."""
+        self.target_pearl = None
+
+    def count_unexplored_ahead(self, pos: Position, direction: Direction, depth: int) -> int:
+        """Counts unseen (None) tiles walking `depth` steps from pos in direction."""
+        count = 0
+        current = pos
+        for _ in range(depth):
+            current = current.add_dir(direction)
+            current_tile = self.board[current.x][current.y]
+            if current_tile is None:
+                count += 1
+            if current_tile is not None:
+                edge_list = current_tile.edges.values()
+                for edge in edge_list:
+                    if edge.edge_type == EdgeType.PORTAL:
+                        count += PORTAL_EXPLORATION_SCORE
+        return count
+
+    
+    def get_teammate_positions(self) -> list[Position]:
+        """Positions of other dragons on your own team, currently visible."""
+        my_team = self.ct.get_team()
+        my_id = self.ct.get_id()
+        positions = []
+        for tile in self.ct.get_tiles():
+            dragon = tile.get_dragon()
+            if dragon is not None and dragon.get_team() == my_team and dragon.get_id() != my_id:
+                positions.append(tile.position)
+        return positions
+
+    def display_memory(self):
+        # for x in range(self.width):
+        #     for y in range(self.height):
+        #         tile = self.board[x][y]
+        #         if tile == None:
+        #             continue
+        #         if tile.dragon_part:
+        #             self.ct.draw_indicator_dot(Position(x, y), 255, 0, 0)
+
+        if self.target_pearl:
+            self.ct.draw_indicator_dot(self.target_pearl, 0, 0, 0)
+
+    # ------------- portal functions ------------------
+    def is_portal_complete(self, portal_id: int) -> bool:
+        """Returns True if both entry and exit ends of a portal pair are in memory."""
+        return portal_id in self.known_portals and len(self.known_portals[portal_id]) >= 2
+
+    
+    # ------------- portal functions ------------------
+
+    def dragon_part_distribution_in_vision(
+        self, include_detail: bool = False,
+        exclude_self: bool = False
+    ) -> tuple[dict[int, int], dict[int, int]] | tuple[int, int]:
+        """Return visible dragon part counts, optionally grouped by dragon ID."""
+        team_dragon_lengths: dict[int, int] = {}
+        enemy_dragon_lengths: dict[int, int] = {}
+
+        for tile in self.ct.get_tiles():
+            if tile.dragon_part == None:
+                continue
+
+            dragon_id = tile.dragon_part.get_id()
+            dragon_is_friendly: bool = tile.dragon_part.get_team() == self.ct.get_team()
+
+            lengths = team_dragon_lengths if dragon_is_friendly else enemy_dragon_lengths
+            if exclude_self and dragon_id == self.ct.get_id():
+                continue
+            if dragon_id in lengths:
+                lengths[dragon_id] += 1
+            else:
+                lengths[dragon_id] = 1
+
+        if include_detail:
+            return team_dragon_lengths, enemy_dragon_lengths
+
+        return sum(team_dragon_lengths.values()), sum(enemy_dragon_lengths.values())

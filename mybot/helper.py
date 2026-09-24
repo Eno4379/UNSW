@@ -1,5 +1,6 @@
 import sys
 from enum import Enum
+
 from constants import *
 
 INT_SIZE = 32

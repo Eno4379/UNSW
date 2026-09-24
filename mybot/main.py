@@ -1,8 +1,9 @@
 import helper as unswbc
 from helper import DEBUG
+
+from constants import DEBUG_ACTIVE
 from memory import Memory
 from movement import Movement
-from constants import DEBUG_ACTIVE
 
 ct: unswbc.Controller
 game: unswbc.Game
@@ -22,9 +23,6 @@ def execute_turn() -> None:
     global unit_count_at_200
     # Update memory every round
     memory.update_memory()
-
-    if DEBUG_ACTIVE:
-        memory.display_memory()
 
     if game.get_round_num() == 200:
         unit_count_at_200 = ct.get_unit_count()
@@ -54,6 +52,7 @@ def execute_turn() -> None:
     if DEBUG_ACTIVE:
         # needs to be called after movement.execute()
         movement.draw_cached_path()
+        memory.display_memory()
 
 
 def main() -> None:

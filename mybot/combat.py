@@ -1,7 +1,7 @@
 import helper as unswbc
-from helper import Direction, DEBUG
-from pathfinding import Pathfinding
+from helper import DEBUG, Direction
 from memory import Memory
+from pathfinding import Pathfinding
 
 
 class Combat:
@@ -31,7 +31,7 @@ class Combat:
         for direction in Direction.get_direction_list():
             current_tile = self.pathfinding.memory.board[here.x][here.y]
             if (current_tile is not None
-                    and current_tile.get_edge(direction).get_edge_type() == unswbc.EdgeType.KELP):
+                    and current_tile.get_edge(direction).get_edge_type() in (unswbc.EdgeType.KELP, unswbc.EdgeType.PORTAL)):
                 continue
 
             tile = self.ct.get_tile(here.add_dir(direction))

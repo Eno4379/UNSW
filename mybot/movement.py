@@ -1,11 +1,12 @@
 import helper as unswbc
-from helper import DEBUG, Direction, Position
-from pathfinding import Pathfinding
+from random import choice, shuffle
+
 from combat import Combat
-from searching import Searching
-import random
+from constants import *
+from helper import DEBUG, Direction, Position
 from memory import Memory
-from constants import SAFETY_BUFFER
+from pathfinding import Pathfinding
+from searching import Searching
 
 
 class Movement:
@@ -23,7 +24,7 @@ class Movement:
         self._pick_random_direction()
 
     def _pick_random_direction(self):
-        self.rand_dir: Direction = random.choice(unswbc._DIRECTIONS)
+        self.rand_dir: Direction = choice(unswbc._DIRECTIONS)
 
     def move_towards_greedy(self, pos: Position):
         here = self.ct.get_position()
@@ -77,7 +78,24 @@ class Movement:
         self.move_towards_greedy(pos)
         return True
 
+    def calculate_best_pearl_anchor(self):
+        candidate = self.memory.sample_best_pearl_anchor(
+            self.ct.get_position(),
+            PEARL_ANCHOR_PRIMARY_SEARCH_NODES,
+            PEARL_ANCHOR_SECONDARY_SEARCH_NODES,
+        )
+        if candidate is not None:
+            score = self.memory.pearl_density_score(
+                candidate, PEARL_ANCHOR_SECONDARY_SEARCH_NODES
+            )
+            self.memory.consider_pearl_anchor(candidate, score)
+            
+
     def searching_behaviour(self) -> bool:
+        percentage_till_game_end = 1 - self.game.get_round_num() / 500
+        if self.memory.get_explored_percentage() > (0.4 * percentage_till_game_end):
+            self.calculate_best_pearl_anchor()
+
         best_direction = self.searching.choose_direction()
 
         if best_direction is not None:
@@ -90,7 +108,7 @@ class Movement:
 
     def move_randomly(self) -> None:
         directions = unswbc._DIRECTIONS[::]
-        random.shuffle(directions)
+        shuffle(directions)
         for direction in directions:
             if self.pathfinding.can_move(direction):
                 self.ct.make_move(direction)
@@ -117,7 +135,8 @@ class Movement:
         """Kills itself by moving backwards, always return true"""
         DEBUG("Killing myself")
         current_dir = self.ct.get_dir()
-        self.ct.make_move(Direction.get_opposite(current_dir))
+        self.ct.make_move(current_dir.get_opposite())
+        return True
 
     def should_sacrifice(self) -> bool:
         team_dragons_dict_exclude_self, enemy_dragons_dict = self.memory.dragon_part_distribution_in_vision(include_detail=True, 
@@ -168,7 +187,7 @@ class Movement:
 
         return False
 
-    def execute_late_game_plan(self):
+    def execute_late_game_plan(self) -> bool:
         if self.combat.execute():
             return True
 
@@ -187,6 +206,7 @@ class Movement:
             DEBUG("split: forced to split due to no safe spaces")
             return True
 
+        return False
     # ------------------ main execution loops -------------------------
     
     def draw_cached_path(self):

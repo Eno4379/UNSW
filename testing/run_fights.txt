@@ -1,0 +1,1 @@
+python run_fights.py --matches 20 --keep-replays
