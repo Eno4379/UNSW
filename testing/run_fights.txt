@@ -1,1 +1,1 @@
-python run_fights.py --matches 20 --keep-replays
+python testing/run_all_maps.py --matches-per-map 10

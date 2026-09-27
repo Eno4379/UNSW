@@ -95,7 +95,7 @@ class Movement:
             self.memory.consider_pearl_anchor(candidate, score)
             
 
-    def searching_behaviour(self) -> bool:
+    def searching_behaviour(self, goes_towards_friendly_crowd: bool = False) -> bool:
         percentage_till_game_end = 1 - self.game.get_round_num() / 500
         anchor_search_threshold = 0.4 * percentage_till_game_end
         if (
@@ -105,7 +105,7 @@ class Movement:
             self._last_pearl_anchor_search_round = self.game.get_round_num()
             self.calculate_best_pearl_anchor()
 
-        best_direction = self.searching.choose_direction()
+        best_direction = self.searching.choose_direction(goes_towards_friendly_crowd)
 
         if best_direction is not None:
             self.ct.make_move(best_direction)
@@ -207,7 +207,7 @@ class Movement:
         if self.pearl_behaviour():
             return True
 
-        if self.searching_behaviour():
+        if self.searching_behaviour(goes_towards_friendly_crowd=True):
             DEBUG("decision: searching for unexplored space")
             return True
 

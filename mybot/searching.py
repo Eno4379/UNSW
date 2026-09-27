@@ -16,7 +16,7 @@ class Searching:
         self.game = game
         self.pathfinding = pathfinding
 
-    def choose_direction(self) -> Direction | None:
+    def choose_direction(self, goes_towards_friendly_crowd: bool = False) -> Direction | None:
         """Return the best safe search direction, or None when all are unsafe. Defaults to moving away from crowds."""
         here = self.ct.get_position()
         directions = unswbc._DIRECTIONS[::]
@@ -37,11 +37,19 @@ class Searching:
             )
             crowd_score = self._crowd_repulsion_score(here, direction, teammates)
             pearl_anchor_score = self._pearl_anchor_score(here, direction)
-            exploration_weighted = EXPLORATION_WEIGHT * exploration_score
-            crowd_weighted = CROWD_AVOIDANCE_WEIGHT * crowd_score
-            pearl_anchor_weighted = PEARL_ANCHOR_WEIGHT * pearl_anchor_score
+            zone_score = self._zone_score(here, direction)
 
-            score = exploration_weighted + crowd_weighted + pearl_anchor_weighted
+            if goes_towards_friendly_crowd:
+                crowd_multiplier = -1
+            else:
+                crowd_multiplier = 1
+
+            exploration_weighted = EXPLORATION_WEIGHT * exploration_score
+            crowd_weighted = CROWD_AVOIDANCE_WEIGHT * crowd_score * crowd_multiplier
+            pearl_anchor_weighted = PEARL_ANCHOR_WEIGHT * pearl_anchor_score
+            zone_score_weighted = ZONE_SCORE_WEIGHT * zone_score
+
+            score = exploration_weighted + crowd_weighted + pearl_anchor_weighted + zone_score_weighted
 
             DEBUG(
                 f"search {direction.value}: total={score:.1f} | "
@@ -50,7 +58,9 @@ class Searching:
                 f"crowd {crowd_score:.1f} x {CROWD_AVOIDANCE_WEIGHT:.1f}="
                 f"{crowd_weighted:.1f} | "
                 f"pearl anchor {pearl_anchor_score:.1f} x "
-                f"{PEARL_ANCHOR_WEIGHT:.1f}={pearl_anchor_weighted:.1f}"
+                f"{PEARL_ANCHOR_WEIGHT:.1f}={pearl_anchor_weighted:.1f} | "
+                f"zone {zone_score:.1f} x {ZONE_SCORE_WEIGHT:.1f}="
+                f"{zone_score_weighted:.1f}"
             )
 
             if score > best_score:
@@ -103,4 +113,22 @@ class Searching:
         #     f"distance_penalty={distance_penalty:.3f}, "
         #     f"score={step_reward - distance_penalty:.3f}"
         # )
+        return step_reward - distance_penalty
+
+    def _zone_score(self, here: Position, direction: Direction):
+        """Encourages snake to move away from its own spawn zone"""
+        zone_goal_pos = self.memory.zone_goal_pos
+        if zone_goal_pos is None:
+            return 0.0
+
+        current_dx, current_dy = self.pathfinding.wrapped_delta(here, zone_goal_pos)
+        current_distance = abs(current_dx) + abs(current_dy)
+
+        candidate = here.add_dir(direction)
+        candidate_dx, candidate_dy = self.pathfinding.wrapped_delta(candidate, zone_goal_pos)
+        candidate_distance = abs(candidate_dx) + abs(candidate_dy)
+
+        step_reward = current_distance - candidate_distance
+        distance_penalty = candidate_distance * DISTANCE_FROM_ZONE_GOAL_PENALTY_WEIGHT
+
         return step_reward - distance_penalty

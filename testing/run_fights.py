@@ -75,7 +75,13 @@ def main() -> None:
     if args.matches < 1:
         parser.error("--matches must be at least 1")
 
-    project_root = Path(__file__).resolve().parent
+    script_dir = Path(__file__).resolve().parent
+    project_root = script_dir.parent
+    output_path = Path(args.output)
+    if not output_path.is_absolute():
+        output_path = script_dir / output_path
+    results_path = Path(f"{output_path}.json")
+    results_path.parent.mkdir(parents=True, exist_ok=True)
     results = []
 
     for match_number in range(1, args.matches + 1):
@@ -101,7 +107,7 @@ def main() -> None:
         "matches": args.matches,
         "wins": {args.altbot: counts[args.altbot], args.mybot: counts[args.mybot]},
         "other_results": counts["unknown"] + counts["error"],
-        "results_file": f"{args.output}.json",
+        "results_file": str(results_path),
     }
 
     payload = {
@@ -109,14 +115,14 @@ def main() -> None:
         "results": results,
     }
 
-    with Path(f"{args.output}.json").open("w", encoding="utf-8") as file:
+    with results_path.open("w", encoding="utf-8") as file:
         json.dump(payload, file, indent=2)
         file.write("\n")
 
     print(f"\nResults: {args.altbot} {counts[args.altbot]} wins, {args.mybot} {counts[args.mybot]} wins")
     if summary["other_results"]:
         print(f"Unresolved matches: {summary['other_results']}")
-    print(f"Saved to {args.output}.json")
+    print(f"Saved to {results_path}")
 
 
 if __name__ == "__main__":

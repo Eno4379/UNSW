@@ -87,7 +87,14 @@ def main() -> None:
     if args.matches_per_map < 1:
         parser.error("--matches-per-map must be at least 1")
 
-    project_root = Path(__file__).resolve().parent
+    script_dir = Path(__file__).resolve().parent
+    project_root = script_dir.parent
+    output_path = Path(args.output)
+    if not output_path.is_absolute():
+        output_path = script_dir / output_path
+    csv_path = Path(f"{output_path}.csv")
+    json_path = Path(f"{output_path}.json")
+    csv_path.parent.mkdir(parents=True, exist_ok=True)
     maps = sorted((project_root / "maps").glob("*.map"), key=lambda path: path.name.lower())
     if not maps:
         parser.error("No .map files found in maps/")
@@ -150,7 +157,7 @@ def main() -> None:
         "total_matches": len(all_results),
         "overall_wins": {args.mybot: total_mybot_wins, args.altbot: total_altbot_wins},
         "overall_other_results": total_unresolved,
-        "results_file": f"{args.output}.json",
+        "results_file": str(json_path),
     }
 
     payload = {
@@ -160,19 +167,19 @@ def main() -> None:
     }
 
     fieldnames = ["match", "map", "team_a", "team_b", "winner", "rounds", "error"]
-    with Path(f"{args.output}.csv").open("w", newline="", encoding="utf-8") as file:
+    with csv_path.open("w", newline="", encoding="utf-8") as file:
         writer = csv.DictWriter(file, fieldnames=fieldnames)
         writer.writeheader()
         writer.writerows(all_results)
 
-    with Path(f"{args.output}.json").open("w", encoding="utf-8") as file:
+    with json_path.open("w", encoding="utf-8") as file:
         json.dump(payload, file, indent=2)
         file.write("\n")
 
     print(f"\nOverall: {args.mybot} {total_mybot_wins} wins, {args.altbot} {total_altbot_wins} wins")
     if total_unresolved:
         print(f"Unresolved matches: {total_unresolved}")
-    print(f"Saved to {args.output}.csv and {args.output}.json")
+    print(f"Saved to {csv_path} and {json_path}")
 
 
 if __name__ == "__main__":
