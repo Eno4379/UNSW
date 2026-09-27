@@ -12,6 +12,10 @@ class Memory:
         self.game = game
         self.width, self.height = game.get_map_size()
         self.spawn_round = game.get_round_num()
+        self.spawn_pos = ct.get_position()
+        
+        self.zone: str = None
+        self.zone_goal_pos: Position | None = None
 
         self.board: List[List[Tile | None]]
         self.board = [[None] * self.height for _ in range(self.width)]
@@ -32,7 +36,47 @@ class Memory:
     def age(self):
         return self.game.get_round_num() - self.spawn_round
 
+    def init_zone_goal(self):
+        if self.spawn_pos is None:
+            return
+
+        edge_percentage = 0.3
+        if (self.spawn_pos.x < self.width * edge_percentage
+            or self.spawn_pos.x >= self.width * (1-edge_percentage)
+            or self.spawn_pos.y < self.height * edge_percentage
+            or self.spawn_pos.y >= self.height * (1-edge_percentage)):
+            self.zone = "edge"
+        else:
+            self.zone = "center"
+
+        center_of_map_x = round(self.width / 2)
+        center_of_map_y = round(self.height / 2)
+        
+        if self.zone == "edge":
+            self.zone_goal_pos = Position(center_of_map_x, center_of_map_y)
+        else:
+            dx = center_of_map_x - self.spawn_pos.x
+            dy = center_of_map_y - self.spawn_pos.y
+            if dx >= 0:
+                zone_goal_pos_x = self.width
+            else:
+                zone_goal_pos_x = 0
+            if dy >= 0:
+                zone_goal_pos_y = self.width
+            else:
+                zone_goal_pos_y = 0
+            self.zone_goal_pos = Position(zone_goal_pos_x, zone_goal_pos_y)
+        
+        DEBUG(f"Set zone goal to be {self.zone_goal_pos}")
+
+
+
     def update_memory(self):
+        if self.spawn_pos is None:
+            self.spawn_pos = self.ct.get_position()
+            if self.spawn_pos is not None:
+                self.init_zone_goal()
+
         visible_tiles: List[Tile] = self.ct.get_tiles()
 
         for tile in visible_tiles:
@@ -183,7 +227,7 @@ class Memory:
         self.pearl_anchor = position
         DEBUG(
             f"decision: new pearl anchor {position.x},{position.y} "
-            f"with density score {score:.2f}"
+            f"with density score {500 * score:.2f}"
         )
         return True
 
@@ -207,6 +251,8 @@ class Memory:
             if tile.has_pearl: pearl_count += 1
         return pearl_count
 
+# memory.py
+
     def _update_target_pearl(self, visible_tiles: List[Tile]):
         # if we can currently see our target's tile, confirm it's still there —
         # otherwise someone else got it
@@ -215,12 +261,48 @@ class Memory:
             if known_tile is not None and not known_tile.has_pearl():
                 self.target_pearl = None
 
-        # if we have no target, lock onto the first pearl currently visible
+        visible_pearls = [tile for tile in visible_tiles if tile.has_pearl()]
+        if not visible_pearls:
+            return
+
+        here = self.ct.get_position()
+
         if self.target_pearl is None:
-            for tile in visible_tiles:
-                if tile.has_pearl():
-                    self.target_pearl = tile.position
-                    break
+            # no target yet — just pick the best of what's visible right now
+            self.target_pearl = max(
+                visible_pearls, key=lambda tile: self._pearl_score(here, tile.position)
+            ).position
+            return
+
+        # already have a target — only switch if something clearly better just came into view
+        current_score = self._pearl_score(here, self.target_pearl)
+        best_candidate = max(
+            visible_pearls, key=lambda tile: self._pearl_score(here, tile.position)
+        )
+        best_score = self._pearl_score(here, best_candidate.position)
+
+        if best_score - current_score > PEARL_SWITCH_IMPROVEMENT_THRESHOLD:
+            DEBUG(
+                f"pearl: switching target {self.target_pearl} -> {best_candidate.position} "
+                f"(score {current_score:.2f} -> {best_score:.2f})"
+            )
+            self.target_pearl = best_candidate.position
+
+    def _pearl_score(self, here: Position, pearl_pos: Position) -> float:
+        """Cheap O(1) score: closer and 'better-quality' pearls score higher.
+        No pathfinding call — wrapped straight-line distance only, as a proxy."""
+        dx = pearl_pos.x - here.x
+        dy = pearl_pos.y - here.y
+        w_half, h_half = self.width / 2, self.height / 2
+        if abs(dx) > w_half:
+            dx -= self.width if dx > 0 else -self.width
+        if abs(dy) > h_half:
+            dy -= self.height if dy > 0 else -self.height
+        distance = abs(dx) + abs(dy)
+
+        # freshness = self.get_effective_pearl_frequency(pearl_pos)
+
+        return -PEARL_DISTANCE_WEIGHT * distance
 
     def get_target_pearl(self) -> Position | None:
         return self.target_pearl
@@ -288,6 +370,9 @@ class Memory:
 
         if self.pearl_anchor:
             self.ct.draw_indicator_dot(self.pearl_anchor, 255, 0, 255)
+
+        if self.zone_goal_pos:
+            self.ct.draw_indicator_dot(self.zone_goal_pos, 50, 50, 50)
 
     def dragon_part_distribution_in_vision(
         self, include_detail: bool = False,

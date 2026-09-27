@@ -13,11 +13,15 @@ game: unswbc.Game
 unit_count_at_200: int | None = None
 budget: Budget
 
+def print_budget():
+    ct.output_log("====== Budget ======")
+    for line in budget.breakdown().splitlines():
+        ct.output_log(line)
+    ct.output_log("====== Budget ======")
 
 def try_split() -> bool:
     global unit_count_at_200, should_grow_early, below_round_200_baseline, round_number
-    # REMOVE THIS
-    return False
+
     if not ct.can_split(2):
         return False
 
@@ -66,13 +70,14 @@ def execute_turn() -> None:
 
     # exhaust_points(50_000)
     # ct.output_log(f"CPU budget spent: {(100_000_000 - budget.remaining())/1_000_000:.1f}M")
-    ct.output_log(budget.breakdown())
+    
 
 
     if DEBUG_ACTIVE:
         # needs to be called after movement.execute()
         movement.draw_cached_path()
         memory.display_memory()
+        print_budget()
 
 
 def main() -> None:
