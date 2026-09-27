@@ -6,12 +6,14 @@ from itertools import count
 from constants import *
 from helper import Direction, Position, Tile
 from memory import Memory
+from budget import costed, Budget
 
 class Pathfinding:
-    def __init__(self, ct: unswbc.Controller, game: unswbc.Game, memory: "Memory"):
+    def __init__(self, ct: unswbc.Controller, game: unswbc.Game, memory: "Memory", budget: "Budget"):
         self.ct = ct
         self.game = game
         self.memory = memory
+        self.budget = budget
         self.width = game.width
         self.height = game.height
 
@@ -78,14 +80,18 @@ class Pathfinding:
 
         return visited_node_count
 
-
+    @costed("move_is_safe")
     def move_is_safe(self, dir: Direction, required_reach: int) -> bool:
-        """A move is 'safe enough' if the space behind it can fit the dragon."""
+        """A move is 'safe enough' if the space can fit the dragon."""
         here = self.ct.get_position()
         target = here.add_dir(dir)
         if not self._passable(here, dir):
             return False
-        reached = self.flood_fill_area(target, MAX_FLOOD_NODES)
+        
+        max_flood_nodes_required = min(MAX_FLOOD_NODES, required_reach)
+        self._last_units = max_flood_nodes_required
+
+        reached = self.flood_fill_area(target, max_flood_nodes_required)
         return reached >= required_reach
     # ---------------- Flood fill check end ---------------------
 
@@ -108,6 +114,7 @@ class Pathfinding:
             nodes_expanded += 1
 
             if pos == goal_pos:
+                self._last_units = nodes_expanded
                 return path
 
             for dir in directions:
@@ -120,7 +127,7 @@ class Pathfinding:
                     visited[next_pos] = new_cost
                     priority = new_cost + heuristic(next_pos)
                     heappush(frontier, (priority, new_cost, next(tie_breaker), next_pos, path + [dir]))
-
+        self._last_units = nodes_expanded
         return None
 
     def _path_still_valid(self, start_pos: Position, goal_pos: Position) -> bool:
@@ -132,17 +139,13 @@ class Pathfinding:
         next_dir = self._cached_path[0]
         return self._passable(start_pos, next_dir)
 
+    @costed("get_next_step")
     def get_next_step(self, start_pos: Position, goal_pos: Position,
-                      max_a_star_nodes: int = MAX_A_STAR_NODES,
-                      max_reachability_nodes: int = MAX_REACHABILITY_NODES) -> Direction | None:
+                      max_a_star_nodes: int = MAX_A_STAR_NODES) -> Direction | None:
         if PATHFINDING_CACHE_ENABLED and self._path_still_valid(start_pos, goal_pos):
             return self._cached_path[0]
 
-        if not self._reachable(start_pos, goal_pos, max_reachability_nodes):
-            self._cached_path = []
-            self._cached_goal = goal_pos
-            return None
-
+        # i have a self._last_units in _find_path_to
         path = self._find_path_to(start_pos, goal_pos, max_a_star_nodes)
         if PATHFINDING_CACHE_ENABLED:
             self._cached_path = path or []
@@ -157,6 +160,7 @@ class Pathfinding:
         if self._cached_path:
             self._cached_path.pop(0)
 
+    @costed("reachable", arg_name="max_nodes")
     def _reachable(self, start_pos: Position, goal_pos: Position, max_nodes: int = MAX_REACHABILITY_NODES) -> bool:
         """Checks if goal_pos is connected to start_pos via a solid BFS flood-fill expansion."""
         if start_pos == goal_pos:

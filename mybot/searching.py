@@ -94,11 +94,13 @@ class Searching:
         distance_penalty = candidate_distance * DISTANCE_FROM_PEARL_ANCHOR_PENALTY_WEIGHT
 
         # positive when this direction moves closer to the anchor, negative when it moves away
-        DEBUG(
-            f"anchor: here={here}, target={anchor}, "
-            f"direction={direction.value}, "
-            f"step_reward={current_distance}, "
-            f"distance_penalty={distance_penalty}, "
-            f"score={step_reward - distance_penalty:.3f}"
-        )
+        # DEBUG(
+        #     f"anchor: here={here}, target={anchor}, "
+        #     f"direction={direction.value}, "
+        #     f"current_distance={current_distance}, "
+        #     f"candidate_distance={candidate_distance}, "
+        #     f"step_reward={step_reward}, "
+        #     f"distance_penalty={distance_penalty:.3f}, "
+        #     f"score={step_reward - distance_penalty:.3f}"
+        # )
         return step_reward - distance_penalty

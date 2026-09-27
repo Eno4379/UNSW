@@ -1,0 +1,1 @@
+unswbc run maps/default_small.map mybot mybot --sandbox -v 2>&1 | Tee-Object -FilePath testing/default_small_sandbox.txt; exit $LASTEXITCODE

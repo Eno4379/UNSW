@@ -1,4 +1,4 @@
-DEBUG_ACTIVE = False  # flip to True only for local debugging — output_log is expensive (~2.5M pts/call)
+DEBUG_ACTIVE = True  # flip to True only for local debugging — output_log is expensive (~2.5M pts/call)
 
 MAX_FLOOD_NODES = 50
 SAFETY_BUFFER = 2

@@ -1,10 +1,10 @@
 DEBUG_ACTIVE = False  # flip to True only for local debugging — output_log is expensive (extra ~5M pts)
 
-MAX_FLOOD_NODES = 50
+MAX_FLOOD_NODES = 25
 SAFETY_BUFFER = 2
 
 MAX_A_STAR_NODES = 25
-MAX_REACHABILITY_NODES = 80
+MAX_REACHABILITY_NODES = 25
 # having max reachability at 200 seems like the highest limit
 # tune verus map size?
 PATHFINDING_CACHE_ENABLED = False
@@ -14,9 +14,10 @@ EXPLORATION_LOOKAHEAD = 5     # how far to peek for unexplored tiles per directi
 EXPLORATION_WEIGHT = 1.0
 CROWD_AVOIDANCE_WEIGHT = 2  # tune higher to prioritize spreading out over exploring
 PEARL_ANCHOR_WEIGHT = 0.5
-PEARL_ANCHOR_PRIMARY_SEARCH_NODES = 10
+PEARL_ANCHOR_PRIMARY_SEARCH_NODES = 20
 PEARL_ANCHOR_SECONDARY_SEARCH_NODES = 10
-PEARL_ANCHOR_SAMPLES_PER_TURN = 5
+PEARL_ANCHOR_SAMPLES_PER_TURN = 2
+PEARL_ANCHOR_UPDATE_INTERVAL = 1
 
 DISTANCE_FROM_PEARL_ANCHOR_PENALTY_WEIGHT = 0.2
 
@@ -39,3 +40,8 @@ portal_traverse_dragon_length_weight = 1.5    # Heavier penalty for longer, more
 # ---------------------- Pearl board ------------------------------------
 TOP_PEARL_PERCENTILE = 0.3
 UNOBSERVED_PEARL_TIME = -2
+
+
+
+# ---------------------- CPU Budget ------------------------------------
+STARTING_BUDGET = 10_000_000

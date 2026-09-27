@@ -7,20 +7,23 @@ from helper import DEBUG, Direction, Position
 from memory import Memory
 from pathfinding import Pathfinding
 from searching import Searching
+from budget import Budget, costed
 
 
 class Movement:
-    def __init__(self, ct: unswbc.Controller, game: unswbc.Game, memory: "Memory"):
+    def __init__(self, ct: unswbc.Controller, game: unswbc.Game, memory: "Memory", budget: "Budget"):
         self.memory = memory
         self.ct = ct
         self.game = game
-        self.pathfinding = Pathfinding(ct, game, memory)
+        self.budget = budget
+        self.pathfinding = Pathfinding(ct, game, memory, budget)
         self.combat = Combat(ct, game, memory, self.pathfinding)
         self.searching = Searching(ct, game, memory, self.pathfinding)
         self.width = game.width
         self.height = game.height
 
         self.starting_position = ct.get_position()
+        self._last_pearl_anchor_search_round = 0
         self._pick_random_direction()
 
     def _pick_random_direction(self):
@@ -92,9 +95,14 @@ class Movement:
             
 
     def searching_behaviour(self) -> bool:
-        percentage_till_game_end = 1 - self.game.get_round_num() / 500
-        if self.memory.get_explored_percentage() > (0.4 * percentage_till_game_end):
-            self.calculate_best_pearl_anchor()
+        # percentage_till_game_end = 1 - self.game.get_round_num() / 500
+        # anchor_search_threshold = 0.4 * percentage_till_game_end
+        # if (
+        #     self.game.get_round_num() - self._last_pearl_anchor_search_round >= PEARL_ANCHOR_UPDATE_INTERVAL
+        #     and self.memory.get_explored_percentage() > anchor_search_threshold
+        # ):
+        #     self._last_pearl_anchor_search_round = self.game.get_round_num()
+        #     self.calculate_best_pearl_anchor()
 
         best_direction = self.searching.choose_direction()
 

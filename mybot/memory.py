@@ -11,6 +11,7 @@ class Memory:
         self.ct = ct
         self.game = game
         self.width, self.height = game.get_map_size()
+        self.spawn_round = game.get_round_num()
 
         self.board: List[List[Tile | None]]
         self.board = [[None] * self.height for _ in range(self.width)]
@@ -26,6 +27,10 @@ class Memory:
 
         self.pearl_anchor: Position | None = None
         self.best_pearl_anchor_score = 0
+
+    @property
+    def age(self):
+        return self.game.get_round_num() - self.spawn_round
 
     def update_memory(self):
         visible_tiles: List[Tile] = self.ct.get_tiles()
