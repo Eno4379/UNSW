@@ -23,9 +23,10 @@ from constants import *
 # Format: name -> (fixed_overhead_points, points_per_unit)
 COST_TABLE = {
     "reachable": (5_000, 750_000),
-    "get_next_step": (5_000, 750_000),
+    "get_next_step": (5_000, 850_000),
     "output_log":   (0, 0),   # per byte, straight from the docs
-    "move_is_safe": (5_000, 750_000)
+    "move_is_safe": (5_000, 850_000),
+    "calculate_best_pearl_anchor" : (15_000_000, 0)
 }
 
 

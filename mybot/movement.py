@@ -81,6 +81,7 @@ class Movement:
         self.move_towards_greedy(pos)
         return True
 
+    @costed("calculate_best_pearl_anchor")
     def calculate_best_pearl_anchor(self):
         candidate = self.memory.sample_best_pearl_anchor(
             self.ct.get_position(),
@@ -95,14 +96,14 @@ class Movement:
             
 
     def searching_behaviour(self) -> bool:
-        # percentage_till_game_end = 1 - self.game.get_round_num() / 500
-        # anchor_search_threshold = 0.4 * percentage_till_game_end
-        # if (
-        #     self.game.get_round_num() - self._last_pearl_anchor_search_round >= PEARL_ANCHOR_UPDATE_INTERVAL
-        #     and self.memory.get_explored_percentage() > anchor_search_threshold
-        # ):
-        #     self._last_pearl_anchor_search_round = self.game.get_round_num()
-        #     self.calculate_best_pearl_anchor()
+        percentage_till_game_end = 1 - self.game.get_round_num() / 500
+        anchor_search_threshold = 0.4 * percentage_till_game_end
+        if (
+            self.game.get_round_num() - self._last_pearl_anchor_search_round >= PEARL_ANCHOR_UPDATE_INTERVAL
+            and self.memory.get_explored_percentage() > anchor_search_threshold
+        ):
+            self._last_pearl_anchor_search_round = self.game.get_round_num()
+            self.calculate_best_pearl_anchor()
 
         best_direction = self.searching.choose_direction()
 

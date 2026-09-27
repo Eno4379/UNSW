@@ -44,4 +44,4 @@ UNOBSERVED_PEARL_TIME = -2
 
 
 # ---------------------- CPU Budget ------------------------------------
-STARTING_BUDGET = 10_000_000
+STARTING_BUDGET = 12_000_000
